@@ -48,6 +48,12 @@
   .tab:hover{ border-color:var(--accent2); }
   .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
   .pane{ display:none; } .pane.active{ display:block; }
+  /* 일별 필터 */
+  .filterbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin-bottom:14px; }
+  .filterbar .lab{ font-weight:700; color:var(--accent); }
+  .filterbar select{ padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:.95rem; font-family:inherit; background:#fff; }
+  .filterbar button{ padding:8px 14px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--accent); font-weight:600; cursor:pointer; font-size:.88rem; }
+  .filterbar .info{ color:var(--muted); font-size:.85rem; }
   /* 설문 세부내용 */
   .doc{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px 24px; }
   .doc h2{ color:var(--accent); font-size:1.2rem; margin:0 0 4px; }
@@ -98,6 +104,12 @@
   </div>
 
   <div id="t1" class="pane active">
+  <div class="filterbar">
+    <span class="lab">📅 일별 조회</span>
+    <select id="dateFilter"><option value="">전체 기간</option></select>
+    <button onclick="document.getElementById('dateFilter').value='';render();">전체 보기</button>
+    <span class="info" id="filterInfo"></span>
+  </div>
   <div class="cards" id="kpis"></div>
 
   <div class="grid">
@@ -218,6 +230,7 @@
     }
     DATA = res;
     showDash();
+    fillDateFilter();
     render();
   };
 
@@ -230,13 +243,36 @@
   function tally(arr){ const m={}; arr.forEach(function(v){ v=(v===''||v==null)?'미상':v; m[v]=(m[v]||0)+1; }); return m; }
   function mkChart(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg); }
 
+  // 일별 필터
+  function dayOf(v){ return String(v||'').slice(0,10); }
+  function uniqueDates(){
+    const iTime=col('접수시각'); const m={};
+    DATA.rows.forEach(function(r){ const d=dayOf(r[iTime]); if(d) m[d]=(m[d]||0)+1; });
+    return Object.keys(m).sort().reverse().map(function(d){ return {d:d,n:m[d]}; });
+  }
+  function fillDateFilter(){
+    const sel=document.getElementById('dateFilter'); if(!sel) return;
+    const cur=sel.value; const days=uniqueDates();
+    sel.innerHTML='<option value="">전체 기간 ('+DATA.rows.length+'건)</option>'+
+      days.map(function(x){ return '<option value="'+x.d+'">'+x.d+' ('+x.n+'건)</option>'; }).join('');
+    if(cur && days.some(function(x){return x.d===cur;})) sel.value=cur;
+  }
+  function filteredRows(){
+    const sel=document.getElementById('dateFilter'); const d=sel?sel.value:'';
+    if(!d) return DATA.rows;
+    const iTime=col('접수시각');
+    return DATA.rows.filter(function(r){ return dayOf(r[iTime])===d; });
+  }
+
   function render(){
-    const rows = DATA.rows;
+    const rows = filteredRows();
+    const selDay = (document.getElementById('dateFilter')||{}).value || '';
     const iTime=col('접수시각'), iGender=col('성별'), iAge=col('나이'), iRegion=col('거주지역'), iPhone=col('연락처'), iTotal=col('총점'), iGrade=col('등급');
     const iItems=[]; for(let k=1;k<=10;k++){ iItems.push(col('문'+k)); }
 
     document.getElementById('updated').textContent = '기준: ' + new Date().toLocaleString('ko-KR');
-    document.getElementById('rowCount').textContent = '(총 ' + rows.length + '건)';
+    document.getElementById('rowCount').textContent = '(' + (selDay?selDay+' · ':'') + rows.length + '건)';
+    var fi=document.getElementById('filterInfo'); if(fi){ fi.textContent = selDay ? ('▶ '+selDay+' 조회 · '+rows.length+'건') : ('전체 기간 · '+rows.length+'건'); }
 
     // KPI
     const totals = rows.map(function(r){ return Number(r[iTotal])||0; });
@@ -319,6 +355,9 @@
       document.getElementById(t.getAttribute('data-tab')).classList.add('active');
     });
   });
+
+  // 일별 필터 변경 시 다시 그리기
+  document.getElementById('dateFilter').addEventListener('change', render);
 
   // 자동 로그인 (세션에 키 있으면)
   document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
