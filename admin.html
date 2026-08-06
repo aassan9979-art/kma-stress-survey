@@ -40,6 +40,32 @@
   .twrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
   .badge{ display:inline-block; padding:1px 9px; border-radius:999px; color:#fff; font-size:.78rem; font-weight:700; }
   .muted{ color:var(--muted); font-size:.82rem; }
+  /* tabs */
+  .tabs{ display:flex; gap:8px; margin:2px 0 16px; flex-wrap:wrap; }
+  .tab{ padding:11px 22px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--muted); font-weight:700; cursor:pointer; font-size:.96rem; }
+  .tab:hover{ border-color:var(--accent2); }
+  .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .pane{ display:none; } .pane.active{ display:block; }
+  /* 설문 세부내용 */
+  .doc{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px 24px; }
+  .doc h2{ color:var(--accent); font-size:1.2rem; margin:0 0 4px; }
+  .doc h3{ color:#234; font-size:1rem; margin:22px 0 8px; border-left:5px solid var(--accent2); padding-left:9px; }
+  .doc p{ color:var(--muted); font-size:.92rem; margin:6px 0; }
+  .doc ol.q{ margin:8px 0; padding-left:22px; } .doc ol.q li{ margin:7px 0; font-size:.93rem; color:#233; }
+  .doc .rev{ color:#c0392b; font-size:.78rem; font-weight:700; margin-left:6px; border:1px solid #e6b3b3; border-radius:5px; padding:0 5px; }
+  .scale{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .scale span{ border:1px solid var(--line); border-radius:8px; padding:6px 12px; font-size:.88rem; background:#f6faf8; }
+  .gtable{ width:100%; border-collapse:collapse; margin:8px 0; font-size:.9rem; }
+  .gtable th,.gtable td{ border:1px solid var(--line); padding:8px 10px; text-align:left; }
+  .gtable th{ background:#f3f7f5; }
+  /* QR */
+  .qrbox{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:28px; text-align:center; max-width:480px; margin:0 auto; }
+  .qrbox img{ width:280px; height:280px; border:1px solid var(--line); border-radius:8px; }
+  .qrbox .u{ font-size:.95rem; color:#234; word-break:break-all; margin:16px 0 4px; }
+  .qrbox .btns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .qrbox a.open,.qrbox button.copy{ padding:11px 18px; border-radius:9px; font-weight:700; font-size:.9rem; cursor:pointer; text-decoration:none; }
+  .qrbox a.open{ background:var(--accent); color:#fff; border:none; }
+  .qrbox button.copy{ background:#fff; color:var(--accent); border:1px solid var(--line); }
 </style>
 </head>
 <body>
@@ -63,6 +89,13 @@
     <button onclick="logout()">로그아웃</button>
   </div>
 
+  <div class="tabs">
+    <button class="tab active" data-tab="t1">📊 현황</button>
+    <button class="tab" data-tab="t2">📋 설문 세부내용</button>
+    <button class="tab" data-tab="t3">🔗 QR · 링크</button>
+  </div>
+
+  <div id="t1" class="pane active">
   <div class="cards" id="kpis"></div>
 
   <div class="grid">
@@ -76,6 +109,60 @@
     <div class="panel full">
       <h3>응답 목록 <span class="muted" id="rowCount"></span></h3>
       <div class="twrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  </div><!-- /t1 현황 -->
+
+  <div id="t2" class="pane">
+    <div class="doc">
+      <h2>스트레스 척도 (PSS-10)</h2>
+      <p>지난 1개월 동안 지각된 스트레스 정도를 측정하는 10문항 자기보고식 척도입니다. 각 문항에 대해 얼마나 자주 그렇게 느꼈는지 응답합니다.</p>
+
+      <h3>응답 척도 (5점)</h3>
+      <div class="scale">
+        <span>0 · 전혀 없음</span><span>1 · 거의 없음</span><span>2 · 때때로 있음</span><span>3 · 자주 있음</span><span>4 · 매우 자주</span>
+      </div>
+
+      <h3>문항 (지난 1개월 기준)</h3>
+      <ol class="q">
+        <li>예상치 못했던 일 때문에 당황했던 적이 얼마나 있었습니까?</li>
+        <li>인생에서 중요한 일들을 조절할 수 없다는 느낌을 얼마나 경험하였습니까?</li>
+        <li>신경이 예민해지고 스트레스를 받고 있다는 느낌을 얼마나 경험하였습니까?</li>
+        <li>당신의 개인적 문제들을 다루는데 있어서 얼마나 자주 자신감을 느끼셨습니까?<span class="rev">역채점</span></li>
+        <li>일상의 일들이 당신의 생각대로 진행되고 있다는 느낌을 얼마나 경험하였습니까?<span class="rev">역채점</span></li>
+        <li>당신이 꼭 해야 하는 일을 처리할 수 없다고 생각한 적이 얼마나 있었습니까?</li>
+        <li>일상생활의 짜증을 얼마나 자주 잘 다스릴 수 있었습니까?<span class="rev">역채점</span></li>
+        <li>최상의 컨디션이라고 얼마나 자주 느끼셨습니까?<span class="rev">역채점</span></li>
+        <li>당신이 통제할 수 없는 일 때문에 화가 난 경험이 얼마나 있었습니까?</li>
+        <li>어려운 일들이 너무 많이 쌓여서 극복하지 못할 것 같은 느낌을 얼마나 자주 경험하셨습니까?</li>
+      </ol>
+
+      <h3>채점 방법</h3>
+      <p>각 문항 응답(0~4)을 합산하여 <b>총점(0~40)</b>을 산출합니다. 역채점 문항(4·5·7·8번)은 선택지 순서를 뒤집어 제시하여 자동 반영됩니다.</p>
+
+      <h3>결과 등급 (5단계)</h3>
+      <table class="gtable">
+        <tr><th>등급</th><th>점수</th><th>해석</th></tr>
+        <tr><td><span class="badge" style="background:#3b82f6">안정</span></td><td>0 ~ 11</td><td>마음의 균형이 잘 유지된 상태</td></tr>
+        <tr><td><span class="badge" style="background:#10b981">양호</span></td><td>12 ~ 13</td><td>가벼운 긴장 상태 · 작은 환기로 회복</td></tr>
+        <tr><td><span class="badge" style="background:#f59e0b">주의</span></td><td>14 ~ 16</td><td>주의가 필요한 구간 · 의식적 휴식 필요</td></tr>
+        <tr><td><span class="badge" style="background:#f97316">경계</span></td><td>17 ~ 20</td><td>상당히 높은 스트레스 · 깊은 휴식·명상 요구</td></tr>
+        <tr><td><span class="badge" style="background:#ef4444">위험</span></td><td>21 이상</td><td>번아웃 위험 · 도움 요청 권장</td></tr>
+      </table>
+      <p style="font-size:.82rem">※ PSS는 진단 도구가 아닌 자기평가용 참고 지표입니다.</p>
+    </div>
+  </div>
+
+  <div id="t3" class="pane">
+    <div class="qrbox">
+      <h2 style="color:var(--accent);margin:0 0 4px;font-size:1.2rem">설문 응답 QR · 링크</h2>
+      <p class="muted" style="margin:0 0 18px">아래 QR/링크를 배포해 설문을 수집하세요.</p>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=560x560&margin=12&data=https%3A%2F%2Faassan9979-art.github.io%2Fkma-stress-survey%2F" alt="설문 QR코드">
+      <div class="u">https://aassan9979-art.github.io/kma-stress-survey/</div>
+      <div class="btns">
+        <a class="open" href="https://aassan9979-art.github.io/kma-stress-survey/" target="_blank" rel="noopener">설문 열기 ↗</a>
+        <button class="copy" onclick="navigator.clipboard.writeText('https://aassan9979-art.github.io/kma-stress-survey/').then(()=>{var b=this;b.textContent='✓ 복사됨';setTimeout(function(){b.textContent='링크 복사';},1500);})">링크 복사</button>
+      </div>
     </div>
   </div>
 </div>
@@ -215,6 +302,16 @@
     const blob=new Blob(["﻿"+csv],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='스트레스설문_응답_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
   }
+
+  // 탭 전환
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
+      document.querySelectorAll('.pane').forEach(function(x){ x.classList.remove('active'); });
+      t.classList.add('active');
+      document.getElementById(t.getAttribute('data-tab')).classList.add('active');
+    });
+  });
 
   // 자동 로그인 (세션에 키 있으면)
   document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
