@@ -43,6 +43,18 @@
   .s-num small{ font-size:1.1rem; color:var(--muted); font-weight:600; }
   .s-cat{ display:inline-block; margin:12px 0 10px; padding:5px 18px; border-radius:999px; color:#fff; font-weight:700; font-size:1.05rem; }
   .s-desc{ color:#444; font-size:.98rem; }
+  /* gauge */
+  .gauge{ margin:20px auto 4px; max-width:360px; }
+  .gauge-track{ position:relative; height:22px; }
+  .gauge-marker{ position:absolute; top:-4px; transform:translateX(-50%); font-size:.72rem; color:#333; white-space:nowrap; transition:left .5s ease; }
+  .gauge-marker b{ display:block; text-align:center; line-height:1; }
+  .gauge-marker .tri{ display:block; text-align:center; line-height:1; margin-top:1px; }
+  .gauge-bar{ position:absolute; bottom:0; left:0; right:0; height:12px; border-radius:7px;
+    background:linear-gradient(to right,#3b82f6 0 27.5%,#10b981 27.5% 32.5%,#f59e0b 32.5% 40%,#f97316 40% 50%,#ef4444 50% 100%); }
+  .gauge-scale{ display:flex; justify-content:space-between; font-size:.72rem; color:var(--muted); margin-top:6px; }
+  .gauge-legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px 12px; margin-top:12px; font-size:.74rem; color:var(--muted); }
+  .gauge-legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .gauge-legend i{ width:11px; height:11px; border-radius:3px; display:inline-block; }
   .again{ margin-top:22px; padding:12px 22px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--accent); font-weight:700; cursor:pointer; font-size:.95rem; }
 </style>
 </head>
@@ -103,6 +115,20 @@
       <div class="scorebox" id="scorebox">
         <div class="s-num" id="sNum">–</div>
         <div class="s-cat" id="sCat"></div>
+        <div class="gauge">
+          <div class="gauge-track">
+            <div class="gauge-marker" id="gaugeMarker"><b id="gaugeVal">0</b><span class="tri">▼</span></div>
+            <div class="gauge-bar"></div>
+          </div>
+          <div class="gauge-scale"><span>0</span><span>40</span></div>
+          <div class="gauge-legend">
+            <span><i style="background:#3b82f6"></i>안정</span>
+            <span><i style="background:#10b981"></i>양호</span>
+            <span><i style="background:#f59e0b"></i>주의</span>
+            <span><i style="background:#f97316"></i>경계</span>
+            <span><i style="background:#ef4444"></i>위험</span>
+          </div>
+        </div>
         <div class="s-desc" id="sDesc"></div>
       </div>
       <button class="again" onclick="location.reload()">새 응답 작성</button>
@@ -205,6 +231,12 @@
     const sDesc=document.getElementById('sDesc'); sDesc.innerHTML=cat.desc.replace(/\n/g,'<br>');
     document.getElementById('scorebox').style.borderColor=cat.hex;
     document.getElementById('sNum').style.color=cat.hex;
+    // 막대 게이지
+    const pct = Math.max(0, Math.min(100, score/40*100));
+    const gm = document.getElementById('gaugeMarker');
+    gm.style.left = pct + '%';
+    gm.style.color = cat.hex;
+    document.getElementById('gaugeVal').textContent = score;
     document.getElementById('formview').style.display='none';
     document.getElementById('result').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});
