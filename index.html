@@ -73,6 +73,10 @@
       </div>
 
       <form id="surveyForm" novalidate>
+        <div class="sec-title">스트레스 문항 (지난 1개월 기준)</div>
+        <div class="sec-sub">지난 1개월을 돌아보며, 각 문항에 얼마나 자주 해당했는지 체크해 주세요.</div>
+        <div id="questions"></div>
+
         <div class="sec-title">인적 사항</div>
 
         <div class="q" id="q_gender">
@@ -100,10 +104,6 @@
           <input type="tel" name="phone" inputmode="numeric" placeholder="예) 01012345678 ( - 없이 숫자만 입력해도 됩니다)">
           <div class="hint">하이픈(-)은 넣어도 되고 빼도 됩니다.</div>
         </div>
-
-        <div class="sec-title">스트레스 문항 (지난 1개월 기준)</div>
-        <div class="sec-sub">지난 1개월을 돌아보며, 각 문항에 얼마나 자주 해당했는지 체크해 주세요.</div>
-        <div id="questions"></div>
 
         <div class="err" id="err"></div>
         <button type="submit" class="btn" id="submitBtn">제출하기</button>
