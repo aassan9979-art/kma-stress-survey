@@ -299,7 +299,7 @@
     const avg = totals.length ? (totals.reduce(function(a,b){return a+b;},0)/totals.length) : 0;
     const highN = rows.filter(function(r){ return r[iGrade]==='경계'||r[iGrade]==='위험'; }).length;
     const highPct = rows.length ? Math.round(highN/rows.length*100) : 0;
-    const lastT = rows.length ? rows[rows.length-1][iTime] : '-';
+    const lastT = rows.length ? rows.reduce(function(m,r){ var t=String(r[iTime]||''); return t>m?t:m; }, '') : '-';
     document.getElementById('kpis').innerHTML =
       kpi('총 응답 수', rows.length + '<small> 건</small>') +
       kpi('평균 총점', avg.toFixed(1) + '<small> / 40</small>') +
@@ -346,7 +346,8 @@
     document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){
       const q = qCols.indexOf(c)>=0; return '<th'+(q?' class="qc"':'')+'>'+c+'</th>';
     }).join('')+'</tr>';
-    const body=rows.slice().reverse().map(function(r){
+    const iTsort=col('접수시각');
+    const body=rows.slice().sort(function(a,b){ return String(b[iTsort]||'').localeCompare(String(a[iTsort]||'')); }).map(function(r){
       return '<tr>'+showCols.map(function(c){
         const v=r[col(c)];
         if(c==='등급'){ return '<td><span class="badge" style="background:'+(GRADE_COLOR[v]||'#999')+'">'+(v||'')+'</span></td>'; }
