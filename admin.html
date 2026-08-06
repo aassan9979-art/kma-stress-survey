@@ -75,6 +75,22 @@
   .qrbox a.open,.qrbox button.copy{ padding:11px 18px; border-radius:9px; font-weight:700; font-size:.9rem; cursor:pointer; text-decoration:none; }
   .qrbox a.open{ background:var(--accent); color:#fff; border:none; }
   .qrbox button.copy{ background:#fff; color:var(--accent); border:1px solid var(--line); }
+  /* 자세히 보기 버튼 + 모달 */
+  .detailbtn{ padding:5px 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--accent); font-weight:600; cursor:pointer; font-size:.82rem; white-space:nowrap; }
+  .detailbtn:hover{ background:#f3f7f5; border-color:var(--accent2); }
+  .modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; padding:16px; overflow:auto; }
+  .modal.show{ display:block; }
+  .modal-box{ background:#fff; border-radius:14px; max-width:680px; width:100%; margin:24px auto; box-shadow:0 12px 44px rgba(0,0,0,.3); overflow:hidden; }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:15px 20px; background:var(--accent); color:#fff; }
+  .modal-head b{ font-size:1.05rem; }
+  .modal-head button{ background:transparent; border:none; color:#fff; font-size:1.3rem; line-height:1; cursor:pointer; }
+  #dmBody{ padding:18px 22px 22px; }
+  .dm-info{ display:flex; flex-wrap:wrap; gap:7px 20px; font-size:.9rem; color:#233; margin-bottom:14px; padding-bottom:13px; border-bottom:1px solid var(--line); }
+  .dm-info b{ color:var(--muted); font-weight:600; margin-right:5px; }
+  .dm-q{ margin:0; padding:10px 0; border-bottom:1px dashed var(--line); font-size:.92rem; color:#233; line-height:1.5; }
+  .dm-q .qn{ color:var(--accent); font-weight:700; }
+  .dm-q .ans{ display:inline-block; margin-top:4px; padding:3px 12px; border-radius:7px; background:#eef4f1; color:#234; font-weight:600; font-size:.88rem; }
+  .dm-q .rev{ color:#c0392b; font-size:.75rem; margin-left:6px; border:1px solid #e6b3b3; border-radius:5px; padding:0 5px; }
 </style>
 </head>
 <body>
@@ -196,6 +212,22 @@
 
   let DATA = { headers:[], rows:[] };
   let charts = {};
+  let TBL_ROWS = [];
+
+  const QUESTIONS = [
+    '예상치 못했던 일 때문에 당황했던 적이 얼마나 있었습니까?',
+    '인생에서 중요한 일들을 조절할 수 없다는 느낌을 얼마나 경험하였습니까?',
+    '신경이 예민해지고 스트레스를 받고 있다는 느낌을 얼마나 경험하였습니까?',
+    '당신의 개인적 문제들을 다루는데 있어서 얼마나 자주 자신감을 느끼셨습니까?',
+    '일상의 일들이 당신의 생각대로 진행되고 있다는 느낌을 얼마나 경험하였습니까?',
+    '당신이 꼭 해야 하는 일을 처리할 수 없다고 생각한 적이 얼마나 있었습니까?',
+    '일상생활의 짜증을 얼마나 자주 잘 다스릴 수 있었습니까?',
+    '최상의 컨디션이라고 얼마나 자주 느끼셨습니까?',
+    '당신이 통제할 수 없는 일 때문에 화가 난 경험이 얼마나 있었습니까?',
+    '어려운 일들이 너무 많이 쌓여서 극복하지 못할 것 같은 느낌을 얼마나 자주 경험하셨습니까?'
+  ];
+  const OPTLABELS = ['전혀 없음','거의 없음','때때로 있음','자주 있음','매우 자주'];
+  const REVSET = {4:1,5:1,7:1,8:1}; // 역채점 문항
 
   function doLogin(){
     const pw = document.getElementById('pw').value.trim();
@@ -340,25 +372,54 @@
     const days=Object.keys(byDay).sort();
     mkChart('cTrend',{ type:'line', data:{ labels:days, datasets:[{ data:days.map(function(d){return byDay[d];}), borderColor:'#2E5E4E', backgroundColor:'rgba(46,94,78,.15)', fill:true, tension:.25 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
 
-    // 표 (문항별 개별 점수 포함)
-    const qCols=['문1','문2','문3','문4','문5','문6','문7','문8','문9','문10'];
-    const showCols=['접수시각','성별','나이','거주지역','연락처'].concat(qCols).concat(['총점','등급']);
-    document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){
-      const q = qCols.indexOf(c)>=0; return '<th'+(q?' class="qc"':'')+'>'+c+'</th>';
-    }).join('')+'</tr>';
+    // 표 (요약 6열 + 자세히 보기)
+    const showCols=['접수시각','성별','거주지역','연락처','총점','등급'];
+    document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){return '<th>'+c+'</th>';}).join('')+'<th></th></tr>';
     const iTsort=col('접수시각');
-    const body=rows.slice().sort(function(a,b){ return String(b[iTsort]||'').localeCompare(String(a[iTsort]||'')); }).map(function(r){
+    const sorted=rows.slice().sort(function(a,b){ return String(b[iTsort]||'').localeCompare(String(a[iTsort]||'')); });
+    TBL_ROWS=sorted;
+    const body=sorted.map(function(r,idx){
       return '<tr>'+showCols.map(function(c){
         const v=r[col(c)];
         if(c==='등급'){ return '<td><span class="badge" style="background:'+(GRADE_COLOR[v]||'#999')+'">'+(v||'')+'</span></td>'; }
-        if(qCols.indexOf(c)>=0){ return '<td class="qc">'+(v==null?'':v)+'</td>'; }
         if(c==='총점'){ return '<td style="font-weight:700">'+(v==null?'':v)+'</td>'; }
         return '<td>'+(v==null?'':v)+'</td>';
-      }).join('')+'</tr>';
+      }).join('')+'<td><button class="detailbtn" onclick="showDetail('+idx+')">자세히 보기</button></td></tr>';
     }).join('');
     document.querySelector('#tbl tbody').innerHTML=body;
   }
   function kpi(lab,val){ return '<div class="kpi"><div class="lab">'+lab+'</div><div class="val">'+val+'</div></div>'; }
+
+  // 응답 상세 보기 (문항 텍스트 + 응답)
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function showDetail(i){
+    const r=TBL_ROWS[i]; if(!r) return;
+    const g=r[col('등급')];
+    function f(name){ return esc(r[col(name)]); }
+    const info='<div class="dm-info">'+
+      '<span><b>접수시각</b>'+f('접수시각')+'</span>'+
+      '<span><b>성별</b>'+f('성별')+'</span>'+
+      '<span><b>나이</b>'+f('나이')+'</span>'+
+      '<span><b>거주지역</b>'+f('거주지역')+'</span>'+
+      '<span><b>연락처</b>'+f('연락처')+'</span>'+
+      '<span><b>총점</b>'+f('총점')+' / 40</span>'+
+      '<span><b>등급</b><span class="badge" style="background:'+(GRADE_COLOR[g]||'#999')+'">'+esc(g)+'</span></span>'+
+    '</div>';
+    let qs='';
+    for(let k=1;k<=10;k++){
+      const sc=r[col('문'+k)];
+      const n=(sc===''||sc==null)?null:Number(sc);
+      const ans=(n!=null && n>=0 && n<=4) ? (n+'점 · '+OPTLABELS[n]) : '무응답';
+      qs+='<div class="dm-q"><span class="qn">문'+k+'.</span> '+esc(QUESTIONS[k-1])+
+          (REVSET[k]?'<span class="rev">(역채점)</span>':'')+
+          '<br><span class="ans">'+ans+'</span></div>';
+    }
+    document.getElementById('dmTitle').textContent='응답 상세 · '+(r[col('접수시각')]||'');
+    document.getElementById('dmBody').innerHTML=info+qs;
+    document.getElementById('detailModal').classList.add('show');
+  }
+  function closeDetail(){ document.getElementById('detailModal').classList.remove('show'); }
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDetail(); });
 
   function downloadCSV(){
     const rows=[DATA.headers].concat(DATA.rows);
@@ -387,5 +448,12 @@
   document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
   if(sessionStorage.getItem('kma_admin_key')){ loadData(); }
 </script>
+
+<div id="detailModal" class="modal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-box">
+    <div class="modal-head"><b id="dmTitle">응답 상세</b><button onclick="closeDetail()" title="닫기">✕</button></div>
+    <div id="dmBody"></div>
+  </div>
+</div>
 </body>
 </html>
