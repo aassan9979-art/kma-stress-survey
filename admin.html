@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스트레스 설문 · 관리자</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{ --accent:#2E5E4E; --accent2:#7FB29B; --bg:#eef2f0; --line:#d9e0dc; --text:#233; --muted:#5b6b64; }
+  *{ box-sizing:border-box; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif; background:var(--bg); color:var(--text); margin:0; line-height:1.5; }
+  /* login */
+  #login{ max-width:380px; margin:0 auto; padding:70px 20px; }
+  #login .box{ background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 3px 14px rgba(0,0,0,.06); padding:30px 26px; text-align:center; }
+  #login h1{ font-size:1.3rem; color:var(--accent); margin:0 0 4px; }
+  #login p{ color:var(--muted); font-size:.9rem; margin:0 0 20px; }
+  #login input{ width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:9px; font-size:1rem; }
+  #login button{ width:100%; margin-top:12px; padding:13px; border:none; border-radius:9px; background:var(--accent); color:#fff; font-size:1.02rem; font-weight:700; cursor:pointer; }
+  #login button:disabled{ opacity:.6; }
+  #loginErr{ color:#c0392b; font-size:.85rem; margin-top:10px; min-height:18px; }
+  /* dashboard */
+  #dash{ display:none; max-width:1160px; margin:0 auto; padding:16px; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin-bottom:14px; }
+  .bar h1{ font-size:1.15rem; color:var(--accent); margin:0; flex:1; }
+  .bar button{ padding:8px 14px; border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--accent); font-weight:600; cursor:pointer; font-size:.88rem; }
+  .bar button.primary{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+  .kpi{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .kpi .lab{ font-size:.82rem; color:var(--muted); }
+  .kpi .val{ font-size:1.9rem; font-weight:800; color:var(--accent); line-height:1.2; }
+  .kpi .val small{ font-size:.9rem; color:var(--muted); font-weight:600; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; }
+  .panel{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .panel h3{ margin:0 0 12px; font-size:1rem; color:#234; }
+  .panel .cwrap{ position:relative; height:260px; }
+  .full{ grid-column:1 / -1; }
+  table{ width:100%; border-collapse:collapse; font-size:.86rem; }
+  th,td{ border-bottom:1px solid var(--line); padding:7px 9px; text-align:left; white-space:nowrap; }
+  th{ background:#f3f7f5; color:#234; position:sticky; top:0; }
+  .twrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  .badge{ display:inline-block; padding:1px 9px; border-radius:999px; color:#fff; font-size:.78rem; font-weight:700; }
+  .muted{ color:var(--muted); font-size:.82rem; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="box">
+    <h1>스트레스 설문 · 관리자</h1>
+    <p>관리자 비밀번호를 입력하세요.</p>
+    <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
+    <button id="loginBtn" onclick="doLogin()">로그인</button>
+    <div id="loginErr"></div>
+  </div>
+</div>
+
+<div id="dash">
+  <div class="bar">
+    <h1>📊 스트레스 설문 결과 대시보드</h1>
+    <span class="muted" id="updated"></span>
+    <button onclick="loadData()">↻ 새로고침</button>
+    <button class="primary" onclick="downloadCSV()">⬇ CSV 다운로드</button>
+    <button onclick="logout()">로그아웃</button>
+  </div>
+
+  <div class="cards" id="kpis"></div>
+
+  <div class="grid">
+    <div class="panel"><h3>등급 분포</h3><div class="cwrap"><canvas id="cGrade"></canvas></div></div>
+    <div class="panel"><h3>총점 분포 (히스토그램)</h3><div class="cwrap"><canvas id="cHist"></canvas></div></div>
+    <div class="panel"><h3>성별 분포</h3><div class="cwrap"><canvas id="cGender"></canvas></div></div>
+    <div class="panel"><h3>연령대 분포</h3><div class="cwrap"><canvas id="cAge"></canvas></div></div>
+    <div class="panel"><h3>지역 분포</h3><div class="cwrap"><canvas id="cRegion"></canvas></div></div>
+    <div class="panel"><h3>문항별 평균 점수 (0~4)</h3><div class="cwrap"><canvas id="cItems"></canvas></div></div>
+    <div class="panel full"><h3>일자별 응답 추이</h3><div class="cwrap"><canvas id="cTrend"></canvas></div></div>
+    <div class="panel full">
+      <h3>응답 목록 <span class="muted" id="rowCount"></span></h3>
+      <div class="twrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 설문 응답이 저장되는 Apps Script 웹앱 URL (설문과 동일)
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4QUrxSvnjrQ7HPiGCnBjz9vmSpAJoTg8sT39TGrL0PVg9mbAWv6bEGWIF4PNvApLq/exec";
+
+  const GRADE_ORDER = ['안정','양호','주의','경계','위험'];
+  const GRADE_COLOR = { '안정':'#3b82f6','양호':'#10b981','주의':'#f59e0b','경계':'#f97316','위험':'#ef4444' };
+
+  let DATA = { headers:[], rows:[] };
+  let charts = {};
+
+  function doLogin(){
+    const pw = document.getElementById('pw').value.trim();
+    if(!pw){ return; }
+    sessionStorage.setItem('kma_admin_key', pw);
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginErr').textContent = '확인 중…';
+    loadData();
+  }
+  function logout(){ sessionStorage.removeItem('kma_admin_key'); location.reload(); }
+
+  // JSONP 로 데이터 요청 (CORS 우회)
+  let jsonpTimer = null;
+  function loadData(){
+    const key = sessionStorage.getItem('kma_admin_key');
+    if(!key){ showLogin(); return; }
+    const old = document.getElementById('jsonp'); if(old) old.remove();
+    const s = document.createElement('script');
+    s.id = 'jsonp';
+    s.src = SCRIPT_URL + '?key=' + encodeURIComponent(key) + '&callback=onAdminData&_=' + Date.now();
+    s.onerror = function(){ fail('서버에 연결할 수 없습니다. URL/배포 상태를 확인하세요.'); };
+    document.body.appendChild(s);
+    clearTimeout(jsonpTimer);
+    jsonpTimer = setTimeout(function(){ fail('응답 시간이 초과되었습니다. 다시 시도해 주세요.'); }, 20000);
+  }
+  function fail(msg){
+    clearTimeout(jsonpTimer);
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginErr').textContent = '⚠️ ' + msg;
+  }
+  window.onAdminData = function(res){
+    clearTimeout(jsonpTimer);
+    document.getElementById('loginBtn').disabled = false;
+    if(!res || res.ok === false){
+      if(res && res.error === 'auth'){ sessionStorage.removeItem('kma_admin_key'); document.getElementById('loginErr').textContent = '⚠️ 비밀번호가 올바르지 않습니다.'; }
+      else { document.getElementById('loginErr').textContent = '⚠️ 데이터를 불러오지 못했습니다.'; }
+      return;
+    }
+    DATA = res;
+    showDash();
+    render();
+  };
+
+  function showLogin(){ document.getElementById('login').style.display='block'; document.getElementById('dash').style.display='none'; }
+  function showDash(){ document.getElementById('login').style.display='none'; document.getElementById('dash').style.display='block'; }
+
+  function col(name){ return DATA.headers.indexOf(name); }
+  function ageGroup(a){ a=Number(a); if(!a) return '미상'; if(a<20) return '10대 이하'; if(a<30) return '20대'; if(a<40) return '30대'; if(a<50) return '40대'; if(a<60) return '50대'; return '60대 이상'; }
+
+  function tally(arr){ const m={}; arr.forEach(function(v){ v=(v===''||v==null)?'미상':v; m[v]=(m[v]||0)+1; }); return m; }
+  function mkChart(id,cfg){ if(charts[id]) charts[id].destroy(); charts[id]=new Chart(document.getElementById(id),cfg); }
+
+  function render(){
+    const rows = DATA.rows;
+    const iTime=col('접수시각'), iGender=col('성별'), iAge=col('나이'), iRegion=col('거주지역'), iPhone=col('연락처'), iTotal=col('총점'), iGrade=col('등급');
+    const iItems=[]; for(let k=1;k<=10;k++){ iItems.push(col('문'+k)); }
+
+    document.getElementById('updated').textContent = '기준: ' + new Date().toLocaleString('ko-KR');
+    document.getElementById('rowCount').textContent = '(총 ' + rows.length + '건)';
+
+    // KPI
+    const totals = rows.map(function(r){ return Number(r[iTotal])||0; });
+    const avg = totals.length ? (totals.reduce(function(a,b){return a+b;},0)/totals.length) : 0;
+    const highN = rows.filter(function(r){ return r[iGrade]==='경계'||r[iGrade]==='위험'; }).length;
+    const highPct = rows.length ? Math.round(highN/rows.length*100) : 0;
+    const lastT = rows.length ? rows[rows.length-1][iTime] : '-';
+    document.getElementById('kpis').innerHTML =
+      kpi('총 응답 수', rows.length + '<small> 건</small>') +
+      kpi('평균 총점', avg.toFixed(1) + '<small> / 40</small>') +
+      kpi('고위험(경계·위험)', highPct + '<small> %  (' + highN + '건)</small>') +
+      kpi('최근 응답', '<span style="font-size:1rem">' + (lastT||'-') + '</span>');
+
+    // 등급 분포
+    const gt = tally(rows.map(function(r){ return r[iGrade]; }));
+    const gLabels = GRADE_ORDER.filter(function(g){ return gt[g]; });
+    mkChart('cGrade',{ type:'doughnut', data:{ labels:gLabels, datasets:[{ data:gLabels.map(function(g){return gt[g];}), backgroundColor:gLabels.map(function(g){return GRADE_COLOR[g];}) }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{position:'right'} } } });
+
+    // 총점 히스토그램 (0-4,5-8,...,36-40)
+    const bins=Array(9).fill(0); const binLabels=['0-4','5-8','9-12','13-16','17-20','21-24','25-28','29-32','33-40'];
+    totals.forEach(function(t){ let idx=Math.floor(t/4); if(t>=33) idx=8; if(idx>8) idx=8; bins[idx]++; });
+    mkChart('cHist',{ type:'bar', data:{ labels:binLabels, datasets:[{ data:bins, backgroundColor:'#7FB29B' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
+
+    // 성별
+    const sx = tally(rows.map(function(r){ return r[iGender]; }));
+    const sLabels=Object.keys(sx);
+    mkChart('cGender',{ type:'pie', data:{ labels:sLabels, datasets:[{ data:sLabels.map(function(k){return sx[k];}), backgroundColor:['#3a6b58','#7FB29B','#c9d6cf','#aac'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right'}} } });
+
+    // 연령대
+    const ag = tally(rows.map(function(r){ return ageGroup(r[iAge]); }));
+    const agOrder=['10대 이하','20대','30대','40대','50대','60대 이상','미상'].filter(function(k){return ag[k];});
+    mkChart('cAge',{ type:'bar', data:{ labels:agOrder, datasets:[{ data:agOrder.map(function(k){return ag[k];}), backgroundColor:'#2E5E4E' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
+
+    // 지역
+    const rg = tally(rows.map(function(r){ return r[iRegion]; }));
+    const rgK=Object.keys(rg).sort(function(a,b){return rg[b]-rg[a];});
+    mkChart('cRegion',{ type:'bar', data:{ labels:rgK, datasets:[{ data:rgK.map(function(k){return rg[k];}), backgroundColor:'#5a8f79' }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,ticks:{precision:0}}} } });
+
+    // 문항별 평균
+    const itemAvg=iItems.map(function(ci){ if(ci<0) return 0; const vs=rows.map(function(r){return Number(r[ci])||0;}); return vs.length? vs.reduce(function(a,b){return a+b;},0)/vs.length : 0; });
+    mkChart('cItems',{ type:'bar', data:{ labels:itemAvg.map(function(_,i){return '문'+(i+1);}), datasets:[{ data:itemAvg.map(function(v){return +v.toFixed(2);}), backgroundColor:'#f59e0b' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:4}} } });
+
+    // 일자별 추이
+    const byDay={}; rows.forEach(function(r){ const d=String(r[iTime]||'').slice(0,10); if(d) byDay[d]=(byDay[d]||0)+1; });
+    const days=Object.keys(byDay).sort();
+    mkChart('cTrend',{ type:'line', data:{ labels:days, datasets:[{ data:days.map(function(d){return byDay[d];}), borderColor:'#2E5E4E', backgroundColor:'rgba(46,94,78,.15)', fill:true, tension:.25 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
+
+    // 표
+    const showCols=['접수시각','성별','나이','거주지역','연락처','총점','등급'];
+    document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+    const body=rows.slice().reverse().map(function(r){
+      return '<tr>'+showCols.map(function(c){
+        const v=r[col(c)];
+        if(c==='등급'){ return '<td><span class="badge" style="background:'+(GRADE_COLOR[v]||'#999')+'">'+(v||'')+'</span></td>'; }
+        return '<td>'+(v==null?'':v)+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+    document.querySelector('#tbl tbody').innerHTML=body;
+  }
+  function kpi(lab,val){ return '<div class="kpi"><div class="lab">'+lab+'</div><div class="val">'+val+'</div></div>'; }
+
+  function downloadCSV(){
+    const rows=[DATA.headers].concat(DATA.rows);
+    const csv=rows.map(function(r){ return r.map(function(v){ v=(v==null?'':String(v)); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(','); }).join('\r\n');
+    const blob=new Blob(["﻿"+csv],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='스트레스설문_응답_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  }
+
+  // 자동 로그인 (세션에 키 있으면)
+  document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
+  if(sessionStorage.getItem('kma_admin_key')){ loadData(); }
+</script>
+</body>
+</html>
