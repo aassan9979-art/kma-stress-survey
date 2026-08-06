@@ -37,7 +37,9 @@
   table{ width:100%; border-collapse:collapse; font-size:.86rem; }
   th,td{ border-bottom:1px solid var(--line); padding:7px 9px; text-align:left; white-space:nowrap; }
   th{ background:#f3f7f5; color:#234; position:sticky; top:0; }
-  .twrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
+  #tbl .qc{ text-align:center; padding:7px 7px; color:#456; }
+  #tbl th.qc{ color:#5b6b64; }
+  .twrap{ max-height:460px; overflow:auto; border:1px solid var(--line); border-radius:8px; }
   .badge{ display:inline-block; padding:1px 9px; border-radius:999px; color:#fff; font-size:.78rem; font-weight:700; }
   .muted{ color:var(--muted); font-size:.82rem; }
   /* tabs */
@@ -282,13 +284,18 @@
     const days=Object.keys(byDay).sort();
     mkChart('cTrend',{ type:'line', data:{ labels:days, datasets:[{ data:days.map(function(d){return byDay[d];}), borderColor:'#2E5E4E', backgroundColor:'rgba(46,94,78,.15)', fill:true, tension:.25 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
 
-    // 표
-    const showCols=['접수시각','성별','나이','거주지역','연락처','총점','등급'];
-    document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+    // 표 (문항별 개별 점수 포함)
+    const qCols=['문1','문2','문3','문4','문5','문6','문7','문8','문9','문10'];
+    const showCols=['접수시각','성별','나이','거주지역','연락처'].concat(qCols).concat(['총점','등급']);
+    document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){
+      const q = qCols.indexOf(c)>=0; return '<th'+(q?' class="qc"':'')+'>'+c+'</th>';
+    }).join('')+'</tr>';
     const body=rows.slice().reverse().map(function(r){
       return '<tr>'+showCols.map(function(c){
         const v=r[col(c)];
         if(c==='등급'){ return '<td><span class="badge" style="background:'+(GRADE_COLOR[v]||'#999')+'">'+(v||'')+'</span></td>'; }
+        if(qCols.indexOf(c)>=0){ return '<td class="qc">'+(v==null?'':v)+'</td>'; }
+        if(c==='총점'){ return '<td style="font-weight:700">'+(v==null?'':v)+'</td>'; }
         return '<td>'+(v==null?'':v)+'</td>';
       }).join('')+'</tr>';
     }).join('');
