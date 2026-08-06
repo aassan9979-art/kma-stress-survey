@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스트레스 평가 설문</title>
+<style>
+  :root{ --accent:#2E5E4E; --accent2:#7FB29B; --bg:#eef2f0; --line:#d5ddd9; --text:#233; --muted:#5b6b64; --req:#c0392b; }
+  *{ box-sizing:border-box; }
+  body{ font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif; background:var(--bg); color:var(--text); margin:0; line-height:1.6; }
+  .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 3px 14px rgba(0,0,0,.06); overflow:hidden; margin-top:16px; }
+  header.top{ text-align:center; padding:26px 20px 22px; background:linear-gradient(135deg,var(--accent),#3a6b58); color:#fff; }
+  header.top h1{ margin:0; font-size:1.5rem; letter-spacing:-.3px; }
+  header.top p{ margin:6px 0 0; font-size:.92rem; opacity:.92; }
+  .intro{ padding:16px 20px; font-size:.92rem; color:var(--muted); background:#f6faf8; border-bottom:1px solid var(--line); }
+  form{ padding:6px 20px 20px; }
+  .sec-title{ font-size:1.05rem; font-weight:700; color:var(--accent); margin:22px 0 6px; padding-bottom:7px; border-bottom:2px solid var(--line); }
+  .sec-sub{ font-size:.86rem; color:var(--muted); margin:-2px 0 8px; }
+  .q{ margin:16px 0; padding:14px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  .q.bad{ border-color:var(--req); background:#fdf3f3; }
+  .label{ font-weight:600; margin-bottom:10px; font-size:.97rem; }
+  .req{ color:var(--req); font-weight:700; margin-left:3px; }
+  .opts{ display:flex; flex-direction:column; gap:7px; }
+  .opts.inline{ flex-direction:row; flex-wrap:wrap; gap:8px; }
+  .opt{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:9px; padding:9px 12px; cursor:pointer; font-size:.95rem; background:#fff; }
+  .opt:hover{ border-color:var(--accent2); }
+  .opt input{ accent-color:var(--accent); width:17px; height:17px; flex:none; }
+  input[type=text],input[type=tel],input[type=number],select{ width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:9px; font-size:1rem; font-family:inherit; background:#fff; }
+  input:focus,select:focus{ outline:none; border-color:var(--accent2); box-shadow:0 0 0 3px rgba(127,178,155,.25); }
+  .hint{ font-size:.82rem; color:var(--muted); margin-top:5px; }
+  .err{ display:none; color:var(--req); font-weight:600; text-align:center; margin:16px 0 0; }
+  .err.show{ display:block; }
+  .btn{ width:100%; padding:15px; margin-top:22px; border:none; border-radius:11px; background:var(--accent); color:#fff; font-size:1.08rem; font-weight:700; cursor:pointer; }
+  .btn:hover{ background:#255043; } .btn:disabled{ opacity:.6; cursor:default; }
+  .foot{ text-align:center; color:var(--muted); font-size:.8rem; padding:16px; }
+  /* result */
+  #result{ display:none; padding:34px 24px 30px; text-align:center; }
+  #result h2{ margin:0 0 4px; color:var(--accent); font-size:1.3rem; }
+  #result .thx{ color:var(--muted); margin:0 0 22px; font-size:.92rem; }
+  .scorebox{ border:2px solid var(--line); border-radius:16px; padding:26px 18px; max-width:420px; margin:0 auto; }
+  .s-num{ font-size:3.2rem; font-weight:800; line-height:1; }
+  .s-num small{ font-size:1.1rem; color:var(--muted); font-weight:600; }
+  .s-cat{ display:inline-block; margin:12px 0 10px; padding:5px 18px; border-radius:999px; color:#fff; font-weight:700; font-size:1.05rem; }
+  .s-desc{ color:#444; font-size:.98rem; }
+  .again{ margin-top:22px; padding:12px 22px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--accent); font-weight:700; cursor:pointer; font-size:.95rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header class="top">
+      <h1>스트레스 평가 설문</h1>
+      <p>스트레스 척도 (PSS)</p>
+    </header>
+
+    <div id="formview">
+      <div class="intro">
+        지난 1개월을 돌아보며, 각 문항에 얼마나 자주 해당했는지 체크해 주세요.<br>
+        수집된 정보는 통계 분석용으로만 활용되며 비밀은 철저히 보장됩니다.
+      </div>
+
+      <form id="surveyForm" novalidate>
+        <div class="sec-title">인적 사항</div>
+
+        <div class="q" id="q_gender">
+          <div class="label">귀하의 성별은?<span class="req">*</span></div>
+          <div class="opts inline">
+            <label class="opt"><input type="radio" name="gender" value="남자"> 남자</label>
+            <label class="opt"><input type="radio" name="gender" value="여자"> 여자</label>
+          </div>
+        </div>
+
+        <div class="q" id="q_age">
+          <div class="label">만으로 몇 세입니까?<span class="req">*</span></div>
+          <input type="number" name="age" min="1" max="120" inputmode="numeric" placeholder="예) 34">
+        </div>
+
+        <div class="q" id="q_region">
+          <div class="label">현재 거주 지역은 어디입니까?<span class="req">*</span></div>
+          <select name="region">
+            <option value="">— 선택 —</option>
+          </select>
+        </div>
+
+        <div class="q" id="q_phone">
+          <div class="label">핸드폰 번호를 적어주세요.<span class="req">*</span></div>
+          <input type="tel" name="phone" placeholder="예) 010-1234-5678">
+        </div>
+
+        <div class="sec-title">스트레스 문항 (지난 1개월 기준)</div>
+        <div class="sec-sub">지난 1개월을 돌아보며, 각 문항에 얼마나 자주 해당했는지 체크해 주세요.</div>
+        <div id="questions"></div>
+
+        <div class="err" id="err"></div>
+        <button type="submit" class="btn" id="submitBtn">제출하기</button>
+      </form>
+    </div>
+
+    <div id="result">
+      <h2>응답이 제출되었습니다</h2>
+      <p class="thx">소중한 응답 감사합니다.<br>회원님의 스트레스 평가 결과입니다.</p>
+      <div class="scorebox" id="scorebox">
+        <div class="s-num" id="sNum">–</div>
+        <div class="s-cat" id="sCat"></div>
+        <div class="s-desc" id="sDesc"></div>
+      </div>
+      <button class="again" onclick="location.reload()">새 응답 작성</button>
+    </div>
+  </div>
+  <div class="foot">스트레스 평가 설문 · PSS-10</div>
+</div>
+
+<script>
+  // ▼▼▼ 배포한 Google Apps Script 웹앱 URL을 여기에 넣으세요 (…/exec) ▼▼▼
+  const SCRIPT_URL = "";
+  // ▲▲▲
+
+  const OPTS_NORMAL  = ['0. 전혀 없음','1. 거의 없음','2. 때때로 있음','3. 자주 있음','4. 매주 자주'];
+  const OPTS_REVERSE = ['4. 매주 자주','3. 자주 있음','2. 때때로 있음','1. 거의 없음','0. 전혀 없음'];
+
+  const PSS = [
+    { t:'1. 최근 1개월 동안, 예상치 못했던 일 때문에 당황했던 적이 얼마나 있었습니까?', o:OPTS_NORMAL },
+    { t:'2. 최근 1개월 동안, 인생에서 중요한 일들을 조절할 수 없다는 느낌을 얼마나 경험하였습니까?', o:OPTS_NORMAL },
+    { t:'3. 최근 1개월 동안, 신경이 예민해지고 스트레스를 받고 있다는 느낌을 얼마나 경험하였습니까?', o:OPTS_NORMAL },
+    { t:'4. 최근 1개월 동안, 당신의 개인적 문제들을 다루는데 있어서 얼마나 자주 자신감을 느끼셨습니까?', o:OPTS_REVERSE },
+    { t:'5. 최근 1개월 동안, 일상의 일들이 당신의 생각대로 진행되고 있다는 느낌을 얼마나 경험하였습니까?', o:OPTS_REVERSE },
+    { t:'6. 최근 1개월 동안, 당신이 꼭 해야 하는 일을 처리할 수 없다고 생각한 적이 얼마나 있었습니까?', o:OPTS_NORMAL },
+    { t:'7. 최근 1개월 동안, 일상생활의 짜증을 얼마나 자주 잘 다스릴 수 있었습니까?', o:OPTS_REVERSE },
+    { t:'8. 최근 1개월 동안, 최상의 컨디션이라고 얼마나 자주 느끼셨습니까?', o:OPTS_REVERSE },
+    { t:'9. 최근 1개월 동안, 당신이 통제할 수 없는 일 때문에 화가 난 경험이 얼마나 있었습니까?', o:OPTS_NORMAL },
+    { t:'10. 최근 1개월 동안, 어려운 일들이 너무 많이 쌓여서 극복하지 못할 것 같은 느낌을 얼마나 자주 경험하셨습니까?', o:OPTS_NORMAL }
+  ];
+
+  const REGIONS = ['서울/경기/인천','부산/경남','대구/경북','광주/전남/전북','대전/충남/세종/충북','강원','제주','기타'];
+
+  const CATEGORIES = [
+    { title:'안정', min:0,  max:11,   hex:'#3b82f6', desc:'마음의 균형이 잘 유지된 상태입니다.\n중심을 잃지 않는 건강한 흐름으로 보입니다.' },
+    { title:'양호', min:12, max:13,   hex:'#10b981', desc:'가벼운 긴장 상태입니다.\n작은 환기로 충분히 회복될 수 있습니다.' },
+    { title:'주의', min:14, max:16,   hex:'#f59e0b', desc:'주의가 필요한 구간입니다.\n삶의 속도를 늦추고 의식적인 휴식이 필요합니다.' },
+    { title:'경계', min:17, max:20,   hex:'#f97316', desc:'상당히 높은 스트레스 상태입니다.\n외부 자극을 줄이고 깊은 휴식과 명상이 요구됩니다.' },
+    { title:'위험', min:21, max:9999, hex:'#ef4444', desc:'번아웃의 위험 상태입니다.\n혼자 견디기보다 도움을 요청하는 것이 중요합니다.' }
+  ];
+
+  // 지역 옵션 채우기
+  const regionSel = document.querySelector('select[name=region]');
+  REGIONS.forEach(function(r){ const o=document.createElement('option'); o.value=r; o.textContent=r; regionSel.appendChild(o); });
+
+  // 문항 렌더링
+  const qbox = document.getElementById('questions');
+  qbox.innerHTML = PSS.map(function(q,i){
+    const opts = q.o.map(function(label){
+      const v = parseInt(label,10);
+      return '<label class="opt"><input type="radio" name="s'+i+'" value="'+v+'"> '+label+'</label>';
+    }).join('');
+    return '<div class="q" id="q_s'+i+'"><div class="label">'+q.t+'<span class="req">*</span></div><div class="opts">'+opts+'</div></div>';
+  }).join('');
+
+  const form = document.getElementById('surveyForm');
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('err');
+
+  function val(name){ const el=form.querySelector('[name="'+name+'"]:checked')||form.querySelector('[name="'+name+'"]'); return el?el.value.trim():''; }
+  function mark(id,bad){ const el=document.getElementById(id); if(el) el.classList.toggle('bad',bad); }
+  function catOf(score){ return CATEGORIES.find(function(c){ return score>=c.min && score<=c.max; }) || CATEGORIES[0]; }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    let ok=true, firstBad=null;
+    // 문항
+    PSS.forEach(function(_,i){ const bad = val('s'+i)===''; mark('q_s'+i,bad); if(bad){ ok=false; if(!firstBad) firstBad='q_s'+i; } });
+    // 인적사항
+    [['q_gender',!val('gender')],['q_age',!val('age')],['q_region',!val('region')],['q_phone',!val('phone')]].forEach(function(p){
+      mark(p[0],p[1]); if(p[1]){ ok=false; if(!firstBad) firstBad=p[0]; }
+    });
+    if(!ok){
+      errEl.textContent='⚠️ 응답하지 않은 항목이 있습니다. 표시된 문항을 확인해 주세요.';
+      errEl.classList.add('show');
+      document.getElementById(firstBad).scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    errEl.classList.remove('show');
+
+    // 점수 계산 (선택 인덱스 합산 = 원본과 동일)
+    let score=0; const answers=[];
+    PSS.forEach(function(_,i){ const v=parseInt(val('s'+i),10)||0; score+=v; answers.push(v); });
+    const cat = catOf(score);
+
+    // 백엔드 저장 (있을 때)
+    if(SCRIPT_URL){
+      const payload = new URLSearchParams();
+      payload.append('gender', val('gender'));
+      payload.append('age', val('age'));
+      payload.append('region', val('region'));
+      payload.append('phone', val('phone'));
+      answers.forEach(function(v,i){ payload.append('s'+(i+1), v); });
+      payload.append('total', score);
+      payload.append('grade', cat.title);
+      try{ fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:payload}); }catch(err){}
+    }
+
+    // 결과 표시
+    document.getElementById('sNum').innerHTML = score + ' <small>/ 40</small>';
+    const sCat=document.getElementById('sCat'); sCat.textContent=cat.title; sCat.style.background=cat.hex;
+    const sDesc=document.getElementById('sDesc'); sDesc.innerHTML=cat.desc.replace(/\n/g,'<br>');
+    document.getElementById('scorebox').style.borderColor=cat.hex;
+    document.getElementById('sNum').style.color=cat.hex;
+    document.getElementById('formview').style.display='none';
+    document.getElementById('result').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+</script>
+</body>
+</html>
