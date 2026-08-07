@@ -91,6 +91,17 @@
   .dm-q .qn{ color:var(--accent); font-weight:700; }
   .dm-q .ans{ display:inline-block; margin-top:4px; padding:3px 12px; border-radius:7px; background:#eef4f1; color:#234; font-weight:600; font-size:.88rem; }
   .dm-q .rev{ color:#c0392b; font-size:.75rem; margin-left:6px; border:1px solid #e6b3b3; border-radius:5px; padding:0 5px; }
+  /* 모바일 대응 */
+  @media (max-width:640px){
+    #dash{ padding:12px; }
+    .bar{ padding:12px 14px; gap:8px; }
+    .bar h1{ flex:1 1 100%; font-size:1.05rem; word-break:keep-all; }
+    .bar #updated{ flex:1 1 100%; }
+    .bar button{ flex:1 1 auto; }
+    .tab{ flex:1 1 auto; padding:10px 14px; text-align:center; font-size:.9rem; }
+    .grid{ grid-template-columns:1fr; }
+    .filterbar{ padding:10px 12px; }
+  }
 </style>
 </head>
 <body>
