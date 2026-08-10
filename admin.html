@@ -151,6 +151,7 @@
       <div class="twrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
     </div>
     <div class="panel full"><h3>일자별 응답 추이</h3><div class="cwrap"><canvas id="cTrend"></canvas></div></div>
+    <div class="panel full"><h3>일자별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cDayStress"></canvas></div></div>
     <div class="panel full"><h3>연령대별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cAgeStress"></canvas></div></div>
     <div class="panel"><h3>등급 분포</h3><div class="cwrap"><canvas id="cGrade"></canvas></div></div>
     <div class="panel"><h3>총점 분포 (히스토그램)</h3><div class="cwrap"><canvas id="cHist"></canvas></div></div>
@@ -392,6 +393,12 @@
     const byDay={}; rows.forEach(function(r){ const d=String(r[iTime]||'').slice(0,10); if(d) byDay[d]=(byDay[d]||0)+1; });
     const days=Object.keys(byDay).sort();
     mkChart('cTrend',{ type:'line', data:{ labels:days, datasets:[{ data:days.map(function(d){return byDay[d];}), borderColor:'#2E5E4E', backgroundColor:'rgba(46,94,78,.15)', fill:true, tension:.25 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
+
+    // 일자별 평균 스트레스 (총점)
+    const dayAgg={}; rows.forEach(function(r){ const d=String(r[iTime]||'').slice(0,10); const t=Number(r[iTotal]); if(d && !isNaN(t)){ (dayAgg[d]=dayAgg[d]||{sum:0,n:0}); dayAgg[d].sum+=t; dayAgg[d].n++; } });
+    const dsDays=Object.keys(dayAgg).sort();
+    const dsAvg=dsDays.map(function(d){ return +(dayAgg[d].sum/dayAgg[d].n).toFixed(1); });
+    mkChart('cDayStress',{ type:'line', data:{ labels:dsDays, datasets:[{ label:'평균 총점', data:dsAvg, borderColor:'#f97316', backgroundColor:'rgba(249,115,22,.15)', fill:true, tension:.25, pointRadius:3 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '평균 총점 '+c.parsed.y;}}}}, scales:{y:{beginAtZero:true,max:40,title:{display:true,text:'평균 총점'}}} } });
 
     // 표 (요약 6열 + 자세히 보기)
     const showCols=['접수시각','성별','나이','거주지역','연락처','총점','등급'];
