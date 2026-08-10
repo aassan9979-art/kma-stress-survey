@@ -384,7 +384,7 @@
     mkChart('cTrend',{ type:'line', data:{ labels:days, datasets:[{ data:days.map(function(d){return byDay[d];}), borderColor:'#2E5E4E', backgroundColor:'rgba(46,94,78,.15)', fill:true, tension:.25 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} } });
 
     // 표 (요약 6열 + 자세히 보기)
-    const showCols=['접수시각','성별','거주지역','연락처','총점','등급'];
+    const showCols=['접수시각','성별','나이','거주지역','연락처','총점','등급'];
     document.querySelector('#tbl thead').innerHTML='<tr>'+showCols.map(function(c){return '<th>'+c+'</th>';}).join('')+'<th></th></tr>';
     const iTsort=col('접수시각');
     const sorted=rows.slice().sort(function(a,b){ return String(b[iTsort]||'').localeCompare(String(a[iTsort]||'')); });
