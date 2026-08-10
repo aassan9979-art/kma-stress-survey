@@ -150,6 +150,7 @@
       <h3>응답 목록 <span class="muted" id="rowCount"></span></h3>
       <div class="twrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
     </div>
+    <div class="panel full"><h3>연령대별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cAgeStress"></canvas></div></div>
     <div class="panel"><h3>등급 분포</h3><div class="cwrap"><canvas id="cGrade"></canvas></div></div>
     <div class="panel"><h3>총점 분포 (히스토그램)</h3><div class="cwrap"><canvas id="cHist"></canvas></div></div>
     <div class="panel"><h3>성별 분포</h3><div class="cwrap"><canvas id="cGender"></canvas></div></div>
@@ -348,6 +349,15 @@
       kpi('평균 총점', avg.toFixed(1) + '<small> / 40</small>') +
       kpi('고위험(경계·위험)', highPct + '<small> %  (' + highN + '건)</small>') +
       kpi('최근 응답', '<span style="font-size:1.1rem">' + (lastT?String(lastT).slice(0,10):'-') + '</span>');
+
+    // 연령대별 평균 스트레스 (총점)
+    const AGE_ORDER=['10대 이하','20대','30대','40대','50대','60대 이상','미상'];
+    const ageAgg={}; AGE_ORDER.forEach(function(k){ ageAgg[k]={sum:0,n:0}; });
+    rows.forEach(function(r){ const g=ageGroup(r[iAge]); const t=Number(r[iTotal]); if(!isNaN(t)){ ageAgg[g].sum+=t; ageAgg[g].n++; } });
+    const asOrder=AGE_ORDER.filter(function(k){ return ageAgg[k].n>0; });
+    const asAvg=asOrder.map(function(k){ return +(ageAgg[k].sum/ageAgg[k].n).toFixed(1); });
+    const GRADE_OF=function(t){ if(t<=11)return '안정'; if(t<=13)return '양호'; if(t<=16)return '주의'; if(t<=20)return '경계'; return '위험'; };
+    mkChart('cAgeStress',{ type:'bar', data:{ labels:asOrder.map(function(k,i){return k+' (n='+ageAgg[k].n+')';}), datasets:[{ label:'평균 총점', data:asAvg, backgroundColor:asAvg.map(function(v){return GRADE_COLOR[GRADE_OF(v)];}) }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '평균 총점 '+c.parsed.y+' · '+GRADE_OF(c.parsed.y);}}}}, scales:{y:{beginAtZero:true,max:40,title:{display:true,text:'평균 총점'}}} } });
 
     // 등급 분포
     const gt = tally(rows.map(function(r){ return r[iGrade]; }));
