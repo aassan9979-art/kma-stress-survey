@@ -152,7 +152,7 @@
       <div class="twrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
     </div>
     <div class="panel full"><h3>일자별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cDayStress"></canvas></div></div>
-    <div class="panel full"><h3>연령대별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cAgeStress"></canvas></div></div>
+    <div class="panel full"><h3>연령대/성별 평균 스트레스 (총점 0~40)</h3><div class="cwrap"><canvas id="cAgeStress"></canvas></div></div>
     <div class="panel"><h3>등급 분포</h3><div class="cwrap"><canvas id="cGrade"></canvas></div></div>
     <div class="panel"><h3>총점 분포 (히스토그램)</h3><div class="cwrap"><canvas id="cHist"></canvas></div></div>
     <div class="panel"><h3>성별 분포</h3><div class="cwrap"><canvas id="cGender"></canvas></div></div>
@@ -351,14 +351,22 @@
       kpi('고위험(경계·위험)', highPct + '<small> %  (' + highN + '건)</small>') +
       kpi('최근 응답', '<span style="font-size:1.1rem">' + (lastT?String(lastT).slice(0,10):'-') + '</span>');
 
-    // 연령대별 평균 스트레스 (총점)
+    // 연령대/성별 평균 스트레스 (총점)
     const AGE_ORDER=['10대 이하','20대','30대','40대','50대','60대 이상','미상'];
-    const ageAgg={}; AGE_ORDER.forEach(function(k){ ageAgg[k]={sum:0,n:0}; });
-    rows.forEach(function(r){ const g=ageGroup(r[iAge]); const t=Number(r[iTotal]); if(!isNaN(t)){ ageAgg[g].sum+=t; ageAgg[g].n++; } });
-    const asOrder=AGE_ORDER.filter(function(k){ return ageAgg[k].n>0; });
-    const asAvg=asOrder.map(function(k){ return +(ageAgg[k].sum/ageAgg[k].n).toFixed(1); });
-    const GRADE_OF=function(t){ if(t<=11)return '안정'; if(t<=13)return '양호'; if(t<=16)return '주의'; if(t<=20)return '경계'; return '위험'; };
-    mkChart('cAgeStress',{ type:'bar', data:{ labels:asOrder.map(function(k,i){return k+' (n='+ageAgg[k].n+')';}), datasets:[{ label:'평균 총점', data:asAvg, backgroundColor:asAvg.map(function(v){return GRADE_COLOR[GRADE_OF(v)];}) }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '평균 총점 '+c.parsed.y+' · '+GRADE_OF(c.parsed.y);}}}}, scales:{y:{beginAtZero:true,max:40,title:{display:true,text:'평균 총점'}}} } });
+    const gd_of=function(r){ var v=r[iGender]; return (v===''||v==null)?'미상':v; };
+    const genderSet={}; rows.forEach(function(r){ genderSet[gd_of(r)]=1; });
+    const GENDER_PREF=['남성','남','여성','여','기타','미상'];
+    const genders=Object.keys(genderSet).sort(function(a,b){ var ia=GENDER_PREF.indexOf(a), ib=GENDER_PREF.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+    const agAgg={}; // agAgg[연령대][성별]={sum,n}
+    rows.forEach(function(r){ const a=ageGroup(r[iAge]); const g=gd_of(r); const t=Number(r[iTotal]); if(isNaN(t))return; agAgg[a]=agAgg[a]||{}; agAgg[a][g]=agAgg[a][g]||{sum:0,n:0}; agAgg[a][g].sum+=t; agAgg[a][g].n++; });
+    const asOrder=AGE_ORDER.filter(function(k){ return agAgg[k]; });
+    const GENDER_COLOR={'남성':'#2E5E4E','남':'#2E5E4E','여성':'#f97316','여':'#f97316','기타':'#7FB29B','미상':'#c9d6cf'};
+    const gPalette=['#2E5E4E','#f97316','#3b82f6','#7FB29B','#c9d6cf'];
+    const asDatasets=genders.map(function(g,gi){ return {
+      label:g, backgroundColor:GENDER_COLOR[g]||gPalette[gi%gPalette.length],
+      data:asOrder.map(function(a){ var c=agAgg[a][g]; return (c&&c.n)? +(c.sum/c.n).toFixed(1):null; })
+    }; });
+    mkChart('cAgeStress',{ type:'bar', data:{ labels:asOrder, datasets:asDatasets }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'},tooltip:{callbacks:{label:function(c){ var a=asOrder[c.dataIndex], g=c.dataset.label, cc=agAgg[a][g]; return g+' 평균 '+c.parsed.y+' (n='+(cc?cc.n:0)+')'; }}}}, scales:{y:{beginAtZero:true,max:40,title:{display:true,text:'평균 총점'}}} } });
 
     // 등급 분포
     const gt = tally(rows.map(function(r){ return r[iGrade]; }));
